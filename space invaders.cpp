@@ -231,7 +231,7 @@ public:
 		Enemy enemy = Enemy(hp_, speed_, startX, shootingSpeed_);
 		enemy.setTexture(texture_);
 		return enemy;
-	}
+	} 
 
 private:
 	int hp_;
@@ -263,6 +263,156 @@ public:
 	int startX;
 	float spawnTime;
 };
+
+
+void drawObject(sf::Sprite& sprite, Vector2f objectPosition)
+{
+	//sf::Vector2u size = sprite.getTexture()->getSize();
+	sprite.setPosition(sf::Vector2f(objectPosition.x, objectPosition.y));
+	window.draw(sprite);
+}
+
+bool isSpriteClicked(const sf::Sprite& sprite)
+{
+	sf::Mouse mouse;
+	auto mousePosition = mouse.getPosition(window);
+	auto spritePosition = sprite.getPosition();
+	auto spriteSize = sprite.getTexture()->getSize();
+
+	return ((mousePosition.x >= spritePosition.x && mousePosition.x <= spritePosition.x + spriteSize.x) &&
+		(mousePosition.y >= spritePosition.y && mousePosition.y <= spritePosition.y + spriteSize.y));
+}
+
+class Button
+{
+public:
+	Button(Vector2f position)
+		:position_(position), sprite_(), isClicked_(false), prevClicked_(false)
+	{ }
+
+	void update()
+	{
+		sf::Mouse mouse;
+		isClicked_ = isSpriteClicked(sprite_) && !mouse.isButtonPressed(sf::Mouse::Left) && prevClicked_;
+		prevClicked_ = mouse.isButtonPressed(sf::Mouse::Left);
+	}
+
+	bool isClicked()
+	{
+		return isClicked_;
+	}
+
+	sf::Sprite& getSprite()
+	{
+		return sprite_;
+	}
+
+	void setTexture(const std::string& texture)
+	{
+		sprite_.setTexture(textures[texture]);
+	}
+
+	Vector2f getPosition()
+	{
+		return position_;
+	}
+
+private:
+
+	Vector2f position_;
+	sf::Sprite sprite_;
+	bool isClicked_;
+	bool prevClicked_;
+};
+
+enum class EMainMenuState
+{
+	START_MENU,
+	LEVELS_MENU,
+	NO_MENU
+};
+
+void loadLevel1();
+
+class MainMenu
+{
+public:
+	MainMenu()
+		:startButton_(Vector2f(350, 250)), exitButton_(Vector2f(350, 350)), level1Button_(Vector2f(350, 200)),
+		level2Button_(Vector2f(350, 300)), level3Button_(Vector2f(350, 400)), menuState_(EMainMenuState::NO_MENU)
+	{ }
+
+	void setButtonsTextures()
+	{
+		startButton_.setTexture("start_button");
+		exitButton_.setTexture("exit_button");
+		level1Button_.setTexture("level1_button");
+		level2Button_.setTexture("level2_button");
+		level3Button_.setTexture("level3_button");
+	}
+
+	void update()
+	{
+		startButton_.update();
+		exitButton_.update();
+		level1Button_.update();
+		level2Button_.update();
+		level3Button_.update();
+
+		if (menuState_ == EMainMenuState::START_MENU)
+		{
+			if (startButton_.isClicked())
+				menuState_ = EMainMenuState::LEVELS_MENU;
+			if (exitButton_.isClicked())
+				exit(0);
+		}
+		else if (menuState_ == EMainMenuState::LEVELS_MENU)
+		{
+			if (level1Button_.isClicked())
+			{
+				loadLevel1();
+				menuState_ = EMainMenuState::NO_MENU;
+			}
+		}
+	}
+
+	void draw()
+	{
+		if (menuState_ == EMainMenuState::START_MENU)
+		{
+			drawObject(startButton_.getSprite(), startButton_.getPosition());
+			drawObject(exitButton_.getSprite(), exitButton_.getPosition());
+		}
+		else if (menuState_ == EMainMenuState::LEVELS_MENU)
+		{
+			drawObject(level1Button_.getSprite(), level1Button_.getPosition());
+			drawObject(level2Button_.getSprite(), level2Button_.getPosition());
+			drawObject(level3Button_.getSprite(), level3Button_.getPosition());
+		}
+	}
+
+	EMainMenuState getMenuState()
+	{
+		return menuState_;
+	}
+
+	void setMenuState(EMainMenuState type)
+	{
+		menuState_ = type;
+	}
+
+private:
+	EMainMenuState menuState_;
+
+	Button startButton_;
+	Button exitButton_;
+
+	Button level1Button_;
+	Button level2Button_;
+	Button level3Button_;
+};
+
+MainMenu mainMenu;
 
 class LevelManager
 {
@@ -364,13 +514,21 @@ void loadTexturesFromFiles()
 
 	texture.loadFromFile("img\\enemy4.png");
 	textures["enemy4"] = texture;
-}
 
-void drawObject(sf::Sprite& sprite, Vector2f objectPosition)
-{
-	//sf::Vector2u size = sprite.getTexture()->getSize();
-	sprite.setPosition(sf::Vector2f(objectPosition.x, objectPosition.y));
-	window.draw(sprite);
+	texture.loadFromFile("img\\start.png");
+	textures["start_button"] = texture;
+
+	texture.loadFromFile("img\\exit.png");
+	textures["exit_button"] = texture;
+
+	texture.loadFromFile("img\\level1.png");
+	textures["level1_button"] = texture;
+
+	texture.loadFromFile("img\\level2.png");
+	textures["level2_button"] = texture;
+
+	texture.loadFromFile("img\\level3.png");
+	textures["level3_button"] = texture;
 }
 
 void updateBullets()
@@ -413,20 +571,24 @@ void updatePlayer()
 
 void nextFrame()
 {
-	levelManager.updateLevel();
-	updateCollisions();
-	updatePlayer();
-	updateBullets();
-	updateEnemys();
+	if (mainMenu.getMenuState() == EMainMenuState::NO_MENU)
+	{
+		levelManager.updateLevel();
+		updateCollisions();
+		updatePlayer();
+		updateBullets();
+		updateEnemys();
+	}
+	else
+	{
+		mainMenu.update();
+		mainMenu.draw();
+	}
 }
 
 void loadLevel1()
 {
 	levelManager.clear();
-	/*levelManager.addObject(LevelObjectInfo(builders_[0], 200, 0));
-	levelManager.addObject(LevelObjectInfo(builders_[1], 500, 5));
-	levelManager.addObject(LevelObjectInfo(builders_[2], 150, 10));
-	levelManager.addObject(LevelObjectInfo(builders_[3], 700, 15));*/
 
 	levelManager.addObject(LevelObjectInfo(builders_[0], 100, 0));
 	levelManager.addObject(LevelObjectInfo(builders_[0], 900, 0));
@@ -448,8 +610,10 @@ int main()
 	loadTexturesFromFiles();
 	player.setTexture("player");
 	createEnemysBuilders();
+	mainMenu.setButtonsTextures();
 	window.setFramerateLimit(120);
-	loadLevel1();
+	mainMenu.setMenuState(EMainMenuState::START_MENU);
+	//loadLevel1();
 
 	while (window.isOpen())
 	{
