@@ -1,4 +1,5 @@
 #include <SFML/Graphics.hpp>
+#include <SFML/Audio.hpp>
 #include <unordered_map>
 #include <queue>
 #include <iostream>
@@ -46,6 +47,13 @@ enum class Direction
 	UP,
 	DOWN
 };
+
+void drawObject(sf::Sprite& sprite, Vector2f objectPosition)
+{
+	//sf::Vector2u size = sprite.getTexture()->getSize();
+	sprite.setPosition(sf::Vector2f(objectPosition.x, objectPosition.y));
+	window.draw(sprite);
+}
 
 class Bullet
 {
@@ -199,14 +207,14 @@ class Player: public Spaceship
 {
 public:
 	Player()
-		:Spaceship(30, 200, Vector2f(400, 620), 0.8f)
+		:Spaceship(3, 200, Vector2f(400, 620), 0.8f)
 	{ }
 
 	void update() override
 	{
-		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right) && position_.x < 950)
 			position_.x += speed_ * deltaTime;
-		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left) && position_.x > 0)
 			position_.x -= speed_ * deltaTime;
 
 		timeFromLastBullet_ += deltaTime;
@@ -216,6 +224,27 @@ public:
 			shoot(Direction::UP);
 		}
 	}
+
+	void draw()
+	{
+		drawObject(getSprite(), getPostion());
+
+		for (int i = 0; i < getHp(); i++)
+			drawObject(hpSprite_, Vector2f(10 + 25 * i, 670));
+	}
+
+	void refillHp()
+	{
+		hp_ = 3;
+	}
+
+	void setHpTexture(const std::string& hpTexture)
+	{
+		hpSprite_.setTexture(textures[hpTexture]);
+	}
+
+private:
+	sf::Sprite hpSprite_;
 };
 Player player;
 
@@ -247,7 +276,7 @@ void createEnemysBuilders()
 	EnemyBuilder enemyFastShot = EnemyBuilder(30, 25, 1.5, "enemy4");
 	EnemyBuilder enemyTank =     EnemyBuilder(60, 10, 4,   "enemy3");
 	EnemyBuilder enemySpecial =  EnemyBuilder(45, 22, 2.5, "enemy1");
-	EnemyBuilder enemyBoss =     EnemyBuilder(100, 8 , 3,   "enemy1");
+	EnemyBuilder enemyBoss =     EnemyBuilder(100, 8 , 3,   "enemy1-250");
 
 	builders_ = { enemyNormal, enemyFastShot, enemyTank, enemySpecial, enemyBoss };
 }
@@ -263,14 +292,6 @@ public:
 	int startX;
 	float spawnTime;
 };
-
-
-void drawObject(sf::Sprite& sprite, Vector2f objectPosition)
-{
-	//sf::Vector2u size = sprite.getTexture()->getSize();
-	sprite.setPosition(sf::Vector2f(objectPosition.x, objectPosition.y));
-	window.draw(sprite);
-}
 
 bool isSpriteClicked(const sf::Sprite& sprite)
 {
@@ -329,17 +350,21 @@ enum class EMainMenuState
 {
 	START_MENU,
 	LEVELS_MENU,
+	GAME_OVER,
+	LEVEL_PASSED,
 	NO_MENU
 };
 
 void loadLevel1();
+void loadLevel2();
+void loadLevel3();
 
 class MainMenu
 {
 public:
 	MainMenu()
 		:startButton_(Vector2f(350, 250)), exitButton_(Vector2f(350, 350)), level1Button_(Vector2f(350, 200)),
-		level2Button_(Vector2f(350, 300)), level3Button_(Vector2f(350, 400)), menuState_(EMainMenuState::NO_MENU)
+		level2Button_(Vector2f(350, 300)), level3Button_(Vector2f(350, 400)), exit2Button_(Vector2f(350, 500)), menuState_(EMainMenuState::NO_MENU)
 	{ }
 
 	void setButtonsTextures()
@@ -349,6 +374,9 @@ public:
 		level1Button_.setTexture("level1_button");
 		level2Button_.setTexture("level2_button");
 		level3Button_.setTexture("level3_button");
+		exit2Button_.setTexture("exit_button");
+		levelPassed_.setTexture(textures["level_passed"]);
+		gameOver_.setTexture(textures["game_over"]);
 	}
 
 	void update()
@@ -358,6 +386,7 @@ public:
 		level1Button_.update();
 		level2Button_.update();
 		level3Button_.update();
+		exit2Button_.update();
 
 		if (menuState_ == EMainMenuState::START_MENU)
 		{
@@ -372,6 +401,28 @@ public:
 			{
 				loadLevel1();
 				menuState_ = EMainMenuState::NO_MENU;
+			}
+			else if (level2Button_.isClicked())
+			{
+				loadLevel2();
+				menuState_ = EMainMenuState::NO_MENU;
+			}
+			else if (level3Button_.isClicked())
+			{
+				loadLevel3();
+				menuState_ = EMainMenuState::NO_MENU;
+			}
+			else if (exit2Button_.isClicked())
+			{
+				menuState_ = EMainMenuState::START_MENU;
+			}
+		}
+		else if (menuState_ == EMainMenuState::GAME_OVER || menuState_ == EMainMenuState::LEVEL_PASSED)
+		{
+			endSceeenTimer_ -= deltaTime;
+			if (endSceeenTimer_ <= 0)
+			{
+				setMenuState(EMainMenuState::LEVELS_MENU);
 			}
 		}
 	}
@@ -388,6 +439,15 @@ public:
 			drawObject(level1Button_.getSprite(), level1Button_.getPosition());
 			drawObject(level2Button_.getSprite(), level2Button_.getPosition());
 			drawObject(level3Button_.getSprite(), level3Button_.getPosition());
+			drawObject(exit2Button_.getSprite(), exit2Button_.getPosition());
+		}
+		else if (menuState_ == EMainMenuState::GAME_OVER)
+		{
+			drawObject(gameOver_, Vector2f(0, 0));
+		}
+		else if (menuState_ == EMainMenuState::LEVEL_PASSED)
+		{
+			drawObject(levelPassed_, Vector2f(0, 0));
 		}
 	}
 
@@ -399,6 +459,7 @@ public:
 	void setMenuState(EMainMenuState type)
 	{
 		menuState_ = type;
+		endSceeenTimer_ = 5;
 	}
 
 private:
@@ -410,6 +471,12 @@ private:
 	Button level1Button_;
 	Button level2Button_;
 	Button level3Button_;
+	Button exit2Button_;
+
+	sf::Sprite gameOver_;
+	sf::Sprite levelPassed_;
+
+	float endSceeenTimer_;
 };
 
 MainMenu mainMenu;
@@ -430,11 +497,26 @@ public:
 	{
 		while (objects_.empty() == false)
 			objects_.pop();
+
+		enemys.clear();
+		bullets.clear();
+
 		currentTime_ = 0;
 	}
 
 	void updateLevel()
 	{
+		if (player.getHp() <= 0)
+		{
+			mainMenu.setMenuState(EMainMenuState::GAME_OVER);
+			player.refillHp();
+		}
+		else if (enemys.size() == 0 && objects_.size() == 0)
+		{
+			mainMenu.setMenuState(EMainMenuState::LEVEL_PASSED);
+			player.refillHp();
+		}
+
 		currentTime_ += deltaTime;
 		while (objects_.empty() == false && objects_.front().spawnTime <= currentTime_)
 		{
@@ -471,7 +553,7 @@ void updateCollisions()
 	{
 		if (bullet.getDirection() == Direction::DOWN && areObjectsCollide(player, bullet))
 		{
-			player.takeDamage(10);
+			player.takeDamage(1);
 			bullet.kill();
 		}
 	}
@@ -506,6 +588,9 @@ void loadTexturesFromFiles()
 	texture.loadFromFile("img\\enemy1.png");
 	textures["enemy1"] = texture;
 
+	texture.loadFromFile("img\\enemy1-250.png");
+	textures["enemy1-250"] = texture;
+
 	texture.loadFromFile("img\\enemy2.png");
 	textures["enemy2"] = texture;
 
@@ -529,6 +614,18 @@ void loadTexturesFromFiles()
 
 	texture.loadFromFile("img\\level3.png");
 	textures["level3_button"] = texture;
+
+	texture.loadFromFile("img\\level_passed.png"); //tmp
+	textures["level_passed"] = texture;
+
+	texture.loadFromFile("img\\game_over.png"); // tmp
+	textures["game_over"] = texture;
+
+	texture.loadFromFile("img\\heart.png");
+	textures["heart"] = texture;
+
+	texture.loadFromFile("img\\bg_fin.png");
+	textures["bg"] = texture;
 }
 
 void updateBullets()
@@ -560,17 +657,34 @@ void updateEnemys()
 		}
 		enemys[i].update();
 		drawObject(enemys[i].getSprite(), enemys[i].getPostion());
+		if (enemys[i].getPostion().y >= 700)
+		{
+			player.takeDamage(1);
+			std::swap(enemys[i], enemys.back());
+			enemys.pop_back();
+		}
 	}
 }
 
 void updatePlayer()
 {
 	player.update();
-	drawObject(player.getSprite(), player.getPostion());
+	player.draw();
 }
 
+sf::SoundBuffer soundBuffer;
+sf::Sound sound;
+void updateBacgroundMusic()
+{
+	if (sound.getStatus() != sf::SoundSource::Status::Playing)
+		sound.play();
+}
+
+sf::Sprite backgroundSprite;
 void nextFrame()
 {
+	updateBacgroundMusic();
+	window.draw(backgroundSprite);
 	if (mainMenu.getMenuState() == EMainMenuState::NO_MENU)
 	{
 		levelManager.updateLevel();
@@ -589,13 +703,34 @@ void nextFrame()
 void loadLevel1()
 {
 	levelManager.clear();
+	levelManager.addObject(LevelObjectInfo(builders_[0], 200, 0));
+	levelManager.addObject(LevelObjectInfo(builders_[0], 400, 0));
+	levelManager.addObject(LevelObjectInfo(builders_[0], 600, 0));
+	levelManager.addObject(LevelObjectInfo(builders_[0], 800, 0));
+
+	levelManager.addObject(LevelObjectInfo(builders_[1], 300, 20));
+	levelManager.addObject(LevelObjectInfo(builders_[1], 500, 20));
+	levelManager.addObject(LevelObjectInfo(builders_[1], 700, 20));
+
+	levelManager.addObject(LevelObjectInfo(builders_[2], 400, 35));
+	levelManager.addObject(LevelObjectInfo(builders_[2], 600, 35));
+
+	levelManager.addObject(LevelObjectInfo(builders_[3], 500, 50));
+	levelManager.addObject(LevelObjectInfo(builders_[3], 500, 55));
+	levelManager.addObject(LevelObjectInfo(builders_[4], 500, 60));
+		
+}
+
+void loadLevel2()
+{
+	levelManager.clear();
 
 	levelManager.addObject(LevelObjectInfo(builders_[0], 100, 0));
 	levelManager.addObject(LevelObjectInfo(builders_[0], 900, 0));
-	
+
 	levelManager.addObject(LevelObjectInfo(builders_[0], 250, 5));
 	levelManager.addObject(LevelObjectInfo(builders_[0], 750, 5));
-	
+
 	levelManager.addObject(LevelObjectInfo(builders_[0], 400, 10));
 	levelManager.addObject(LevelObjectInfo(builders_[0], 600, 10));
 
@@ -603,12 +738,51 @@ void loadLevel1()
 
 	levelManager.addObject(LevelObjectInfo(builders_[2], 150, 25));
 	levelManager.addObject(LevelObjectInfo(builders_[2], 850, 25));
+
+	levelManager.addObject(LevelObjectInfo(builders_[3], 500, 40));
+	levelManager.addObject(LevelObjectInfo(builders_[3], 200, 45));
+	levelManager.addObject(LevelObjectInfo(builders_[3], 800, 45));
+
+	levelManager.addObject(LevelObjectInfo(builders_[3], 300, 70));
+	levelManager.addObject(LevelObjectInfo(builders_[3], 700, 70));
+	levelManager.addObject(LevelObjectInfo(builders_[3], 500, 75));
+
+	levelManager.addObject(LevelObjectInfo(builders_[4], 500, 85));
+
+
+}
+
+void loadLevel3()
+{
+	levelManager.clear();
+	for (int i = 0; i < 9; i++)
+	{
+		levelManager.addObject(LevelObjectInfo(builders_[0], (300 * i)%1000 + 50, i * 10));
+		levelManager.addObject(LevelObjectInfo(builders_[0], 1000 - ((300 * i) % 1000) - 50, i*10));
+	}
+
+	levelManager.addObject(LevelObjectInfo(builders_[3], 100, 95));
+	levelManager.addObject(LevelObjectInfo(builders_[3], 900, 95));
+	levelManager.addObject(LevelObjectInfo(builders_[3], 300, 100));
+	levelManager.addObject(LevelObjectInfo(builders_[3], 700, 100));
+
+	for (int i = 0; i < 5; i++)
+		levelManager.addObject(LevelObjectInfo(builders_[1], 150 * (i + 1) + 50, 120 +  i * 4));
+
+	for (int i = 0; i < 5; i++)
+		levelManager.addObject(LevelObjectInfo(builders_[1], 1000 - (150 * (i + 1) + 50), 140 + i * 4));
+
+	levelManager.addObject(LevelObjectInfo(builders_[4], 500, 150));
 }
 
 int main()
 {
 	loadTexturesFromFiles();
+	backgroundSprite.setTexture(textures["bg"]);
+	soundBuffer.loadFromFile("music/muzyka.wav");
+	sound.setBuffer(soundBuffer);
 	player.setTexture("player");
+	player.setHpTexture("heart");
 	createEnemysBuilders();
 	mainMenu.setButtonsTextures();
 	window.setFramerateLimit(120);
