@@ -1,0 +1,19 @@
+﻿  ConsoleApplication2.cpp
+c:\users\bartosz\source\repos\consoleapplication2\consoleapplication2\consoleapplication2.cpp(145): warning C4244: "argument": konwersja z "T" do "float", możliwa utrata danych
+          with
+          [
+              T=unsigned int
+          ]
+c:\users\bartosz\source\repos\consoleapplication2\consoleapplication2\consoleapplication2.cpp(187): warning C4244: "argument": konwersja z "int" do "float", możliwa utrata danych
+c:\users\bartosz\source\repos\consoleapplication2\consoleapplication2\consoleapplication2.cpp(193): warning C4244: "argument": konwersja z "int" do "float", możliwa utrata danych
+c:\users\bartosz\source\repos\consoleapplication2\consoleapplication2\consoleapplication2.cpp(233): warning C4244: "argument": konwersja z "int" do "float", możliwa utrata danych
+c:\users\bartosz\source\repos\consoleapplication2\consoleapplication2\consoleapplication2.cpp(633): warning C4018: "<": niezgodność typu ze znakiem/bez znaku
+c:\users\bartosz\source\repos\consoleapplication2\consoleapplication2\consoleapplication2.cpp(649): warning C4018: "<": niezgodność typu ze znakiem/bez znaku
+c:\users\bartosz\source\repos\consoleapplication2\consoleapplication2\consoleapplication2.cpp(760): warning C4244: "argument": konwersja z "int" do "float", możliwa utrata danych
+c:\users\bartosz\source\repos\consoleapplication2\consoleapplication2\consoleapplication2.cpp(761): warning C4244: "argument": konwersja z "int" do "float", możliwa utrata danych
+c:\users\bartosz\source\repos\consoleapplication2\consoleapplication2\consoleapplication2.cpp(770): warning C4244: "argument": konwersja z "int" do "float", możliwa utrata danych
+c:\users\bartosz\source\repos\consoleapplication2\consoleapplication2\consoleapplication2.cpp(773): warning C4244: "argument": konwersja z "int" do "float", możliwa utrata danych
+  Trwa generowanie kodu
+  All 760 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  Zakończono generowanie kodu
+  ConsoleApplication2.vcxproj -> C:\Users\Bartosz\source\repos\ConsoleApplication2\Release\ConsoleApplication2.exe
